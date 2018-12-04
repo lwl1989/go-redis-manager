@@ -47,7 +47,7 @@ func buildHttpServerHandler(urlStr string) (err error) {
 			return err
 		}
 	}else{
-		root = "/Users/wenglong11/go/src/github.com/lwl1989/go-redis-manager"
+		root = os.Getenv("GOPATH")+"/src/github.com/lwl1989/go-redis-manager"
 	}
 	//fmt.Println(root)
 	message := &server.Message{
