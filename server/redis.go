@@ -2,7 +2,6 @@ package server
 
 import (
 "github.com/go-redis/redis"
-"sync"
 )
 
 type redisConnection struct {
