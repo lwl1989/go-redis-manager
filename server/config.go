@@ -3,6 +3,7 @@ package server
 import (
 	"time"
 	"crypto/sha256"
+	"errors"
 )
 
 type RedisVhosts map[string]*RedisConfig
@@ -26,4 +27,13 @@ func (RConf *RedisConfig)  GetHval() string {
 		RConf.hval = string(sha256.Sum256([]byte(time.Now().String() + RConf.Host))[:])
 	}
 	return RConf.hval
+}
+
+func (hosts RedisVhosts) GetConfig(hval string) (*RedisConfig,error) {
+	conf,ok := hosts[hval]
+	if ok {
+		return conf,nil
+	}
+
+	return nil,errors.New("config not found with "+ hval)
 }

@@ -6,9 +6,18 @@ import (
 	"strconv"
 )
 
+
+type redisConnections map[string]*redisConnection
+type redisConnection struct {
+	*redis.Client
+	conf *RedisConfig
+	kMap KeyMap
+}
+
 var onceRedis sync.Once
 var connections *redisConnections
-type redisConnections map[string]*redisConnection
+var redisCon *redisConnection
+
 
 //初始化不同配置的连接池
 func Init() *redisConnections {
@@ -23,19 +32,12 @@ func Init() *redisConnections {
 	return connections
 }
 
-type redisConnection struct {
-	*redis.Client
-	conf *RedisConfig
-	kMap KeyMap
-}
-
-
-var redisCon *redisConnection
 
 func GetRedis(hval string)  *redisConnection{
-	conf,ok := RedisHosts[hval]
-	if  !ok {
-		panic("hash value "+hval+" config not found")
+
+	conf,err := RedisHosts.GetConfig(hval)
+	if  err != nil {
+		panic(err.Error())
 	}
 
 	redisCon = &redisConnection{
@@ -47,8 +49,8 @@ func GetRedis(hval string)  *redisConnection{
 		DB:      conf.Db,  // use default DB
 	})
 
-	_, err := redisCon.Ping().Result()
-	if err != nil {
+	_, err1 := redisCon.Ping().Result()
+	if err1 != nil {
 		redisCon.reConnection()
 	}
 	return redisCon
