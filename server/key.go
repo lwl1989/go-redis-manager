@@ -1,13 +1,14 @@
 package server
 
 //redis type
-const REDIS_NONE   = 0
-const REDIS_STRING = 1
-const REDIS_LIST   = 2
-const REDIS_SET    = 3
-const REDIS_ZSET   = 4
-const REDIS_HASH   = 5
-const REDIS_UNKNOW = 9
+const RedisNone   = 0
+const RedisString = 1
+const RedisList   = 2
+const RedisSet    = 3
+const RedisZset   = 4
+const RedisHash   = 5
+const RedisGeo    = 6
+const RedisUnknow = 9
 
 //db key map lists
 type KeyMap map[int][]*KeyInfo
@@ -25,7 +26,7 @@ func GetKeyInfo() *KeyInfo  {
 	return &KeyInfo{
 		Db: 1,
 		KeyName:"",
-		Type:REDIS_UNKNOW,
+		Type:RedisUnknow,
 		TTl: -1,
 		checkExists:false,
 	}
@@ -35,7 +36,7 @@ func GetKeyInfoWithInfo(key string, db int) *KeyInfo  {
 	return &KeyInfo{
 		Db: db,
 		KeyName:key,
-		Type:REDIS_UNKNOW, //default string
+		Type:RedisUnknow, //default string
 		TTl: -1,
 		checkExists:true,
 	}
@@ -69,17 +70,19 @@ func (info *KeyInfo) GetType() uint8 {
 
 func (info *KeyInfo) GetTypeString() string {
 	switch info.Type {
-	case REDIS_HASH:
+	case RedisHash:
 		return "hash"
-	case REDIS_LIST:
+	case RedisList:
 		return "list"
-	case REDIS_SET:
+	case RedisSet:
 		return "set"
-	case REDIS_ZSET:
+	case RedisZset:
 		return "zset"
-	case REDIS_STRING:
+	case RedisString:
 		return "string"
-	case REDIS_NONE:
+	case RedisGeo:
+		return "geo"
+	case RedisNone:
 		fallthrough  //fallthrough不会判断下一条case的expr结果是否为true。 就是没有break
 		//但是如果几个条件都走一样的结果，使用 fallthrough串起来即可
 	default:
