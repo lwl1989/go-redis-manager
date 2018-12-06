@@ -1,5 +1,7 @@
 package server
 
+import "time"
+
 //redis type
 const RedisNone   = 0
 const RedisString = 1
@@ -18,7 +20,7 @@ type KeyInfo struct {
 	Db		int    `json:"db"`   //which db
 	KeyName string `json:"key_name"`  //keyname
 	Type 	uint8  `json:"type"`      //key type
-	TTl		int    `json:"ttl"`
+	TTl		int64  `json:"ttl"`
 	checkExists  bool
 }
 
@@ -90,7 +92,33 @@ func (info *KeyInfo) GetTypeString() string {
 	}
 }
 
-func (info *KeyInfo) GetTtl() int {
+func (info *KeyInfo) GetTtl() int64 {
 	return info.TTl
 }
 
+func (info *KeyInfo) SetTtlWithTime(t time.Duration) {
+	info.TTl = int64(t.Seconds())
+}
+
+func (info *KeyInfo) SetTypeWithString(t string) {
+	switch t {
+	case "hash":
+		info.Type = RedisHash
+	case "list":
+		info.Type = RedisList
+	case "geo":
+		info.Type = RedisGeo
+	case "string":
+		info.Type = RedisString
+	case "set":
+		info.Type = RedisSet
+	case "zset":
+		info.Type = RedisZset
+	case "none":
+		info.Type = RedisNone
+		info.checkExists = false
+	default:
+		info.Type = RedisUnknow
+	}
+	info.checkExists = true
+}

@@ -90,13 +90,40 @@ func (conn *redisConnection) initKeys() {
 
 	conn.kMap = GetKeyMap()
 	for i:=1; i<=db; i++ {
+
 		s := conn.Keys("*")
 		keys,err := s.Result()
 		kList := make([]*KeyInfo,0)
 		if err == nil {
+			//use pipe line to get keys info
+			p:=conn.Pipeline()
+
 			for _,key := range keys {
-				kList = append(kList, GetKeyInfoWithInfo(key, i))
+				info := GetKeyInfoWithInfo(key, i)
+				kList = append(kList, info)
+				//p.Process(conn.Type(key))
+				p.Process(conn.TTL(key))
 			}
+			c,e := p.Exec()
+			p.Close()
+
+
+			if e == nil {
+				i := 0
+				for _,c1 :=range c {
+					switch c1.(type) {
+					case *redis.StatusCmd:
+						//c2 := c1.(*redis.StatusCmd)
+						//fmt.Println(c2.Val())
+					case *redis.DurationCmd:
+						c2 := c1.(*redis.DurationCmd)
+						info := kList[i]
+						info.SetTtlWithTime(c2.Val())
+						i++
+					}
+				}
+			}
+
 		}
 		conn.kMap[i] = kList
 	}
