@@ -47,9 +47,9 @@ func main()  {
 					fmt.Println(c2.Val())
 					fmt.Println(c2.Err())
 				case *redis.DurationCmd:
-					//c2 := c1.(*redis.DurationCmd)
-					//fmt.Println(c2.Val())
-					//fmt.Println(c2.Args())
+					c2 := c1.(*redis.DurationCmd)
+					fmt.Println(c2.Val())
+					fmt.Println(c2.Args())
 				}
 				//fmt.Println(c1.Name())
 				//fmt.Println(c1.Args())
