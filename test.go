@@ -4,7 +4,6 @@ import (
 	"github.com/go-redis/redis"
 	"fmt"
 	"strconv"
-	"reflect"
 )
 
 func main()  {
@@ -40,14 +39,17 @@ func main()  {
 		if e != nil {
 			fmt.Println(e)
 		}else{
+			i := 0
 			for _,c1 :=range c {
-				cc := reflect.TypeOf(c1)
-				fmt.Println(cc)
-				switch vvvv:=c1.(type){
+				switch c1.(type){
 				case *redis.StatusCmd:
 					c2 := c1.(*redis.StatusCmd)
-					fmt.Println(vvvv)
 					fmt.Println(c2.Val())
+					fmt.Println(c2.Err())
+				case *redis.DurationCmd:
+					//c2 := c1.(*redis.DurationCmd)
+					//fmt.Println(c2.Val())
+					//fmt.Println(c2.Args())
 				}
 				//fmt.Println(c1.Name())
 				//fmt.Println(c1.Args())
@@ -55,8 +57,10 @@ func main()  {
 				////s2 := c1.(*redis.StatusCmd)
 				//fmt.Println(s2.Val())
 				//fmt.Println(c1)
-
-				break
+				i++
+				if i>10 {
+					break
+				}
 			}
 		}
 
