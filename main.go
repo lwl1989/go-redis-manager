@@ -22,14 +22,22 @@ func main() {
 	// Initialize astilectron
 	debug = true
 	urlStr := "http://127.0.0.1:10003"
-	go buildHttpServerHandler(urlStr)
+	conf := make(map[string]*server.RedisConfig)
+	redisConfg := &server.RedisConfig{
+		Host:"127.0.0.1:6379",
+		Pw:"",
+		Db:0,
+	}
+	conf[redisConfg.GetHval()] = redisConfg
+	server.RedisHosts = conf
+	buildHttpServerHandler(urlStr)
 	//if err != nil {
 	//	fmt.Println(err)
 	//}
-	buildEctron(urlStr)
-	select {
-
-	}
+	//buildEctron(urlStr)
+	//select {
+	//
+	//}
 	return
 }
 
