@@ -26,7 +26,7 @@ type KeyInfo struct {
 
 func GetKeyInfo() *KeyInfo  {
 	return &KeyInfo{
-		Db: 1,
+		Db: 0,
 		KeyName:"",
 		Type:RedisUnknow,
 		TTl: -1,
@@ -34,7 +34,7 @@ func GetKeyInfo() *KeyInfo  {
 	}
 }
 
-func GetKeyInfoWithInfo(key string, db int) *KeyInfo  {
+func GetKeyInfoWithBasic(key string, db int) *KeyInfo  {
 	return &KeyInfo{
 		Db: db,
 		KeyName:key,
@@ -56,6 +56,17 @@ func (maps KeyMap) GetDbKeys(db int) []*KeyInfo {
 	}
 
 	return nil
+}
+
+func (maps KeyMap) String() string {
+	str := ""
+	for db,value := range maps {
+		str += "db:"+string(db)+" <br/>"
+		for _,key := range  value {
+			str += key.String()
+		}
+	}
+	return str
 }
 
 func (info *KeyInfo) GetDb() int {
@@ -121,4 +132,8 @@ func (info *KeyInfo) SetTypeWithString(t string) {
 		info.Type = RedisUnknow
 	}
 	info.checkExists = true
+}
+
+func (info *KeyInfo) String() string {
+	return "name:"+info.KeyName + " type:" + info.GetTypeString()
 }

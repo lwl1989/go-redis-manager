@@ -24,7 +24,8 @@ var RedisHosts RedisVhosts
 
 func (RConf *RedisConfig)  GetHval() string {
 	if RConf.hval == "" {
-		RConf.hval = string(sha256.Sum256([]byte(time.Now().String() + RConf.Host))[:])
+		bs := sha256.Sum256([]byte(time.Now().String() + RConf.Host))
+		RConf.hval = string(bs[:])
 	}
 	return RConf.hval
 }

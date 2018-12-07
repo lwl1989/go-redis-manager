@@ -4,6 +4,7 @@ import (
 	"github.com/go-redis/redis"
 	"sync"
 	"strconv"
+	"fmt"
 )
 
 
@@ -50,6 +51,7 @@ func GetRedis(hval string)  *redisConnection{
 	})
 
 	_, err1 := redisCon.Ping().Result()
+
 	if err1 != nil {
 		redisCon.reConnection()
 	}
@@ -74,23 +76,22 @@ func (conn *redisConnection) dConnection() {
 
 //select dbs and keys to mem
 func (conn *redisConnection) initKeys() {
-	s := conn.ConfigGet("database")
+	s := conn.ConfigGet("databases")
 
 	val,err := s.Result()
-
-	db := 1
+	db := 0
 	if err == nil {
 		if len(val) > 0 {
 			db,err = strconv.Atoi(val[1].(string))
 			if err != nil {
-				db = 1
+				db = 0
 			}
 		}
 	}
 
 	conn.kMap = GetKeyMap()
-	for i:=1; i<=db; i++ {
-
+	for i:=0; i<=db; i++ {
+		conn.Do("select", i)
 		s := conn.Keys("*")
 		keys,err := s.Result()
 		kList := make([]*KeyInfo,0)
@@ -99,7 +100,7 @@ func (conn *redisConnection) initKeys() {
 			p:=conn.Pipeline()
 
 			for _,key := range keys {
-				info := GetKeyInfoWithInfo(key, i)
+				info := GetKeyInfoWithBasic(key, i)
 				kList = append(kList, info)
 				//p.Process(conn.Type(key))
 				p.Process(conn.TTL(key))
@@ -125,6 +126,7 @@ func (conn *redisConnection) initKeys() {
 			}
 
 		}
+		fmt.Println(i,db)
 		conn.kMap[i] = kList
 	}
 }
