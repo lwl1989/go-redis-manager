@@ -21,7 +21,7 @@ type Render struct {
 
 func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 
-	//if static file go file
+	//if static file go file or some query
 	if req.Method == "GET" {
 		fmt.Println(req)
 		if req.RequestURI == "" {
@@ -38,17 +38,17 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 				r.initKeys()
 				re := &Render{
 					Key: "test",
-					Value: r.kMap.String(),
+					Value: r.kMap,
 				}
 				res.WriteHeader(200)
 				if err := t.Execute(res, re); err != nil {
 					res.Write([]byte(err.Error()))
 					fmt.Println("There was an error:", err.Error())
 				}
-
-
 				return
 			}
+		}
+		if req.RequestURI == "/config" {
 
 		}
 		message.FileHandler.ServeHTTP(res, req)
@@ -57,8 +57,8 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 
 	//any request must use POST
 	if req.Method != "POST" {
-		res.Write([]byte("<h1>500</h1>"))
-		res.WriteHeader(500)
+		res.Write([]byte("<h1>404</h1>"))
+		res.WriteHeader(404)
 		return
 	}
 

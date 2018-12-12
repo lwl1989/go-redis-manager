@@ -58,14 +58,34 @@ func (maps KeyMap) GetDbKeys(db int) []*KeyInfo {
 	return nil
 }
 
+func (maps KeyMap) GetKeyWith(db int, keyName string) *KeyInfo {
+
+	list := maps.GetDbKeys(db)
+
+	if list == nil {
+		return nil
+	}
+
+	for _,value := range list {
+		if value.KeyName == keyName {
+			return value
+		}
+	}
+
+	return  nil
+}
+
 func (maps KeyMap) String() string {
+
 	str := ""
+
 	for db,value := range maps {
 		str += "db:"+string(db)+" <br/>"
 		for _,key := range  value {
 			str += key.String()
 		}
 	}
+
 	return str
 }
 
