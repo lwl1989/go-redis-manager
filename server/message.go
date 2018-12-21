@@ -19,14 +19,18 @@ type Render struct {
 	Value interface{}
 }
 
+
+
 func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 
 	//if static file go file or some query
 	if req.Method == "GET" {
-		fmt.Println(req)
+		//default index
 		if req.RequestURI == "" {
 			req.RequestURI = "/index.html"
 		}
+
+		//show all keys
 		if req.RequestURI == "/all" {
 			t, err := template.ParseFiles(message.Root+"/resources/app/index.html")
 			if err != nil {
@@ -48,8 +52,10 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 				return
 			}
 		}
-		if req.RequestURI == "/config" {
 
+		//show config router
+		if req.RequestURI == "/config" {
+			return
 		}
 		message.FileHandler.ServeHTTP(res, req)
 		return
@@ -57,12 +63,16 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 
 	//any request must use POST
 	if req.Method != "POST" {
-		res.Write([]byte("<h1>404</h1>"))
-		res.WriteHeader(404)
+		//do any thing
+		req.ParseForm()
+		DoOperation(req.PostForm)
 		return
 	}
 
-	//do any thing
+
+	res.Write([]byte("<h1>404</h1>"))
+	res.WriteHeader(404)
+
 }
 
 func (message *Message) getIndexContent()  {

@@ -132,28 +132,37 @@ func (info *KeyInfo) SetTtlWithTime(t time.Duration) {
 }
 
 func (info *KeyInfo) SetTypeWithString(t string) {
-	switch t {
-	case "hash":
-		info.Type = RedisHash
-	case "list":
-		info.Type = RedisList
-	case "geo":
-		info.Type = RedisGeo
-	case "string":
-		info.Type = RedisString
-	case "set":
-		info.Type = RedisSet
-	case "zset":
-		info.Type = RedisZset
-	case "none":
+	if t == "none" {
 		info.Type = RedisNone
 		info.checkExists = false
-	default:
-		info.Type = RedisUnknow
+	} else {
+		info.Type = getTypeWithString(t)
+		info.checkExists = true
 	}
-	info.checkExists = true
 }
 
 func (info *KeyInfo) String() string {
 	return "name:"+info.KeyName + " type:" + info.GetTypeString()
+}
+
+
+func getTypeWithString(t string)  uint8 {
+	switch t {
+	case "hash":
+		return RedisHash
+	case "list":
+		return RedisList
+	case "geo":
+		return RedisGeo
+	case "string":
+		return RedisString
+	case "set":
+		return RedisSet
+	case "zset":
+		return RedisZset
+	case "none":
+		return  RedisNone
+	default:
+		return RedisUnknow
+	}
 }

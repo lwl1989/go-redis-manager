@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"os"
 	"github.com/lwl1989/go-redis-manager/server"
+	"strings"
 )
 
 // Constants
@@ -30,6 +31,12 @@ func main() {
 	}
 	conf[redisConfg.GetHval()] = redisConfg
 	server.RedisHosts = conf
+	r := server.GetRedis(redisConfg.GetHval())
+	cmd := r.Info()
+	res := cmd.Val()
+	fmt.Println(strings.Index(res,"\n"), res)
+	return
+	//
 	buildHttpServerHandler(urlStr)
 	//if err != nil {
 	//	fmt.Println(err)
@@ -65,6 +72,7 @@ func buildHttpServerHandler(urlStr string) (err error) {
 	}
 	//fmt.Println(urlObj.Port())
 	//+urlObj.Port()
+	server.Init()
 	err = http.ListenAndServe(":"+urlObj.Port(), message)
 	if err != nil {
 		fmt.Println(err)
