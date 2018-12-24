@@ -7,6 +7,8 @@ import (
 
 //config
 const SetConfig = "set_config"
+const ChangeConfig = "change_config"
+const DelConfig =  "del_config"
 
 //server
 const Info		= "get_server_info"
@@ -36,6 +38,12 @@ func getServerInfo(conn *redisConnection) string {
 	return str
 }
 
+func removeConfig(values url.Values) error {
+	hval := values.Get("hval")
+
+	return RemoveConnections(hval)
+}
+
 func setConfig(values url.Values) error {
 	host := values.Get("host")
 	name := values.Get("name")
@@ -47,6 +55,15 @@ func setConfig(values url.Values) error {
 		Db:0,
 		Pw:pw,
 	})
+}
+
+func changeConfig(values url.Values) error {
+	hval := values.Get("hval")
+	name := values.Get("name")
+	pw   := values.Get("pw")
+	host := values.Get("host")
+
+	return ChangeConnection(hval, InitConfig(host, name, pw))
 }
 
 func KeyOperation(conn *redisConnection, action string, values url.Values) (*KeyValues) {
@@ -90,11 +107,16 @@ func DoOperation(values url.Values) (bool, interface{}) {
 		return false,nil
 	}
 
-	conn := GetRedisInConnections(conf.GetHval())
+	conn 	:= GetRedisInConnections(conf.GetHval())
+	action 	:= values.Get("action")
 
-	action := values.Get("action")
 	switch action {
 		case SetConfig:
+			return true,setConfig(values)
+		case DelConfig:
+			return true,removeConfig(values)
+		case ChangeConfig:
+			return true,changeConfig(values)
 		case Info:
 			return true,getServerInfo(conn)
 		default:
@@ -104,21 +126,25 @@ func DoOperation(values url.Values) (bool, interface{}) {
 			}
 			return false, nil
 	}
+
 	return false, nil
 }
 
 func getType(conn *redisConnection, key string) uint8  {
 	cmd := conn.Type(key)
 	str,err := cmd.Result()
+
 	if err != nil {
 		return RedisUnknow
 	}
+
 	return getTypeWithString(str)
 }
 
 func getTtl(conn *redisConnection, key string) int64{
 	cmd := conn.TTL(key)
 	d,err := cmd.Result()
+
 	if err != nil {
 		return -1
 	}
@@ -129,6 +155,7 @@ func getTtl(conn *redisConnection, key string) int64{
 func getKey(con *redisConnection, info *KeyInfo) *KeyValues {
 	cmd := con.Get(info.GetKeyName())
 	str,_ := cmd.Result()
+
 	return &KeyValues{
 		KeyInfo:info,
 		Value: str,

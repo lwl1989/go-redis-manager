@@ -76,7 +76,6 @@ func (maps KeyMap) GetKeyWith(db int, keyName string) *KeyInfo {
 }
 
 func (maps KeyMap) String() string {
-
 	str := ""
 
 	for db,value := range maps {

@@ -22,7 +22,7 @@ var redisCon *redisConnection
 
 
 //初始化不同配置的连接池
-func Init() redisConnections {
+func Init() map[string]*redisConnection {
 	onceRedis.Do(func() {
 		connections := make(redisConnections)
 		for _,conf := range RedisHosts {
@@ -36,6 +36,23 @@ func Init() redisConnections {
 	})
 
 	return connections
+}
+
+func (rcons redisConnections) Remove(conn *redisConnection) error {
+	deleted := false
+	for key,conn := range rcons {
+		if conn.Conf.GetHval() == conn.Conf.GetHval() {
+			delete(rcons, key)
+			deleted = true
+			break
+		}
+	}
+
+	if !deleted {
+		return errors.New("remove connections error:"+conn.Conf.GetName())
+	}
+
+	return nil
 }
 
 func GetRedisInConnections(hval string) *redisConnection {
@@ -96,13 +113,6 @@ func (conn *redisConnection) reConnection() {
 	})
 }
 
-func (conn *redisConnection) dConnection() {
-	_, err := redisCon.Ping().Result()
-	if err != nil {
-		redisCon.reConnection()
-	}
-}
-
 //select dbs and keys to mem
 func (conn *redisConnection) initKeys() {
 	s := conn.ConfigGet("databases")
@@ -119,6 +129,7 @@ func (conn *redisConnection) initKeys() {
 	}
 
 	conn.AllKeys = make([][]string,0)
+
 	for i:=0; i<=db; i++ {
 		conn.Do("select", i)
 		s := conn.Keys("*")
@@ -128,53 +139,48 @@ func (conn *redisConnection) initKeys() {
 		}else {
 			conn.AllKeys[i] = keys
 		}
-		//kList := make([]*KeyInfo,0)
-		//if err == nil {
-		//	//use pipe line to get keys info
-		//	p:=conn.Pipeline()
-		//
-		//	for _,key := range keys {
-		//		info := GetKeyInfoWithBasic(key, i)
-		//		kList = append(kList, info)
-		//		//p.Process(conn.Type(key))
-		//		p.Process(conn.TTL(key))
-		//	}
-		//	c,e := p.Exec()
-		//	p.Close()
-		//
-		//
-		//	if e == nil {
-		//		i := 0
-		//		for _,c1 :=range c {
-		//			switch c1.(type) {
-		//			case *redis.StatusCmd:
-		//				//c2 := c1.(*redis.StatusCmd)
-		//				//fmt.Println(c2.Val())
-		//			case *redis.DurationCmd:
-		//				c2 := c1.(*redis.DurationCmd)
-		//				info := kList[i]
-		//				info.SetTtlWithTime(c2.Val())
-		//				i++
-		//			}
-		//		}
-		//	}
-		//
-		//}
-		//conn.kMap[i] = kList
 	}
 }
 
+func RemoveConnections(hval string) error {
+	err := connections.Remove(GetRedis(hval))
+
+	if err != nil {
+		return err
+	}
+
+	err = RedisHosts.Remove(hval)
+
+	if err != nil {
+		return err
+	}
+
+
+	return nil
+}
 
 func AddConnections(config *RedisConfig) error {
-	err := RedisHosts.AddHost(config)
+	err := RedisHosts.Add(config)
+
 	if err != nil {
 		return err
 	}
 
 	client := GetRedis(config.GetHval())
+	client.initKeys()
 
 	if client.Err != nil {
 		return client.Err
 	}
+
 	return nil
+}
+
+func ChangeConnection(hval string, conf *RedisConfig) error {
+	err := RemoveConnections(hval)
+	if err != nil {
+		return err
+	}
+
+	return AddConnections(conf)
 }

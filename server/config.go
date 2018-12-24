@@ -1,9 +1,9 @@
 package server
 
 import (
-	"time"
 	"crypto/sha256"
 	"errors"
+	"time"
 )
 
 type RedisVhosts map[string]*RedisConfig
@@ -11,68 +11,117 @@ type RedisVhosts map[string]*RedisConfig
 type RedisConfig struct {
 	Name string `json:"name,omitempty"`
 	Host string `json:"host,omitempty"`
-	Db   int `json:"db,omitempty"`
+	Db   int    `json:"db,omitempty"`
 	Pw   string `json:"pw,omitempty"`
-	hval string
+	Hval string `json:"hval"`
 }
 
 type HostConfig struct {
 	Host string `json:"host,omitempty"`
-	Port int `json:"port,omitempty"`
+	Port int    `json:"port,omitempty"`
 }
 
 var RedisHosts RedisVhosts
 
-func (RConf *RedisConfig)  GetHval() string {
-	if RConf.hval == "" {
-		bs := sha256.Sum256([]byte(time.Now().String() + RConf.Host))
-		RConf.hval = string(bs[:])
+func InitConfig(host, name, pw string) *RedisConfig {
+	conf := &RedisConfig{
+		Name:name,
+		Host:host,
+		Db:0,
+		Pw:pw,
 	}
-	return RConf.hval
+	conf.GetHval()
+	return conf
 }
 
-func (RConf *RedisConfig)  getName() string {
+func (RConf *RedisConfig) GetHval() string {
+	if RConf.Hval == "" {
+		bs := sha256.Sum256([]byte(RConf.Host + time.Now().String()))
+		RConf.Hval = string(bs[:])
+	}
+
+	return RConf.Hval
+}
+
+func (RConf *RedisConfig) GetName() string {
 	if RConf.Name == "" {
 		return RConf.Host
 	}
 	return RConf.Name
 }
 
-
-func (hosts RedisVhosts) GetConfig(hval string) (*RedisConfig,error) {
-	conf,ok := hosts[hval]
+func (hosts RedisVhosts) GetConfig(Hval string) (*RedisConfig, error) {
+	conf, ok := hosts[Hval]
 	if ok {
-		return conf,nil
+		return conf, nil
 	}
 
-	return nil,errors.New("config not found with "+ hval)
+	return nil, errors.New("config not found with " + Hval)
 }
 
-func (hosts RedisVhosts) GetConfigByName(name string) (*RedisConfig,error) {
-	for _,conf := range hosts {
-		if conf.getName() == name {
-			return conf,nil
+func (hosts RedisVhosts) GetConfigByName(name string) (*RedisConfig, error) {
+	for _, conf := range hosts {
+		if conf.GetName() == name {
+			return conf, nil
 		}
 	}
-	return nil,errors.New("config not found with "+ name)
+
+	return nil, errors.New("config not found with " + name)
 }
 
-func (hosts RedisVhosts) GetName(hval string) (string ,error) {
-	conf, err := hosts.GetConfig(hval)
+func (hosts RedisVhosts) GetName(Hval string) (string, error) {
+	conf, err := hosts.GetConfig(Hval)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
-	return conf.getName(), nil
+	return conf.GetName(), nil
 }
 
-func (hosts RedisVhosts) AddHost(RConf *RedisConfig) (error) {
-	name := RConf.getName()
-	for _,conf := range hosts {
-		if conf.getName() == name {
-			return  errors.New("config already exists with name(if name is nil, name is host:port):"+name)
+func (hosts RedisVhosts) Add(RConf *RedisConfig) (error) {
+	for _, conf := range hosts {
+		if conf.GetHval() == RConf.GetHval() {
+			return errors.New("config already exists with name(if name is nil, name is host:port):" + RConf.GetName())
 		}
 	}
 
-	return  nil
+	hosts[RConf.GetHval()] = RConf
+	return nil
+}
+
+func (hosts RedisVhosts) Remove(hval string) error {
+	deleted := false
+
+	for key, conf := range hosts {
+		if conf.GetHval() == hval {
+			delete(hosts, key)
+			deleted = true
+			break
+		}
+	}
+
+	if !deleted {
+		return errors.New("delete config error with hash:" + hval)
+	}
+
+	return nil
+}
+
+func (hosts RedisVhosts) Edit(hval string, New *RedisConfig) error {
+	changed := false
+
+	for key, conf := range hosts {
+		if conf.GetHval() == hval {
+			delete(hosts, key)
+			hosts[New.GetHval()] = New
+			changed = true
+			break
+		}
+	}
+
+	if !changed {
+		return errors.New("change config error with hval:" + hval)
+	}
+
+	return nil
 }

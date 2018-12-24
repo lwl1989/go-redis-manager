@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"fmt"
 	"text/template"
+	"encoding/json"
 )
 
 
@@ -16,7 +17,7 @@ type Message struct {
 
 type Render struct {
 	Key string
-	Value interface{}
+	Value ValueOf
 }
 
 
@@ -32,7 +33,7 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 
 		//show all keys
 		if req.RequestURI == "/all" {
-			t, err := template.ParseFiles(message.Root+"/resources/app/index.html")
+			_, err := template.ParseFiles(message.Root+"/resources/app/index.html")
 			if err != nil {
 				fmt.Println("parse file err:", err)
 				return
@@ -40,15 +41,12 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 			for _,conf :=  range RedisHosts {
 				r := GetRedis(conf.GetHval())
 				r.initKeys()
-				re := &Render{
-					Key: "test",
-					Value: r.kMap,
-				}
+
 				res.WriteHeader(200)
-				if err := t.Execute(res, re); err != nil {
-					res.Write([]byte(err.Error()))
-					fmt.Println("There was an error:", err.Error())
-				}
+				//if err := t.Execute(res, re); err != nil {
+				//	res.Write([]byte(err.Error()))
+				//	fmt.Println("There was an error:", err.Error())
+				//}
 				return
 			}
 		}
@@ -65,7 +63,22 @@ func (message *Message) ServeHTTP(res http.ResponseWriter,req *http.Request) {
 	if req.Method != "POST" {
 		//do any thing
 		req.ParseForm()
-		DoOperation(req.PostForm)
+		operation,result := DoOperation(req.PostForm)
+		if !operation {
+			res.Write([]byte("<h1>404</h1>"))
+			res.WriteHeader(404)
+		}
+
+		bs,err := json.Marshal(result)
+
+		if err != nil {
+			res.Write([]byte(err.Error()))
+			res.WriteHeader(500)
+			return
+		}
+
+		res.Write(bs)
+		res.WriteHeader(200)
 		return
 	}
 
